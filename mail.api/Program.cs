@@ -1,14 +1,10 @@
-using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using mail.api.Common;
 using mail.api.DAL;
 using mail.api.Model;
 using mail.api.Pages;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json.Serialization;
 using System.Reflection;
 
 namespace mail.api
@@ -40,11 +36,14 @@ namespace mail.api
 #endif
             builder.Services.AddAuthorization(o =>
             {
-                o.AddPolicy("Token", policy => policy.RequireClaim("Token"));
+                o.AddPolicy("Basic", policy => policy.RequireClaim("Basic"));
             });
-            builder.Services.AddAuthentication().AddScheme<TokenAuthenticationOptions, TokenAuthenticationHandler>("Token", null);
-            builder.Services.AddControllers();
-            builder.Services.AddMvc();
+            builder.Services.AddAuthentication("Basic").AddScheme<TokenAuthenticationOptions, TokenAuthenticationHandler>("Basic", null);
+            builder.Services.AddControllers().AddNewtonsoftJson(options =>
+            {
+                options.SerializerSettings.ContractResolver = new DefaultContractResolver();
+            });
+            builder.Services.AddMvc(o => o.EnableEndpointRouting = false);
 
             var app = builder.Build();
 
@@ -103,7 +102,7 @@ namespace mail.api
             //app.UseStaticFiles();
             //使用系统路由
 #if DEBUG
-            app.UseRouting().UseAuthorization().UseAuthentication().UseEndpoints(endpoints =>
+            app.UseRouting().UseAuthentication().UseAuthorization().UseEndpoints(endpoints =>
             {
                 endpoints.MapSwagger();
             });
@@ -113,9 +112,9 @@ namespace mail.api
                 c.RoutePrefix = string.Empty;
             });
 #else
-            app.UseRouting().UseAuthorization().UseAuthentication();
+            app.UseRouting().UseAuthentication();.UseAuthorization();
 #endif
-
+            //app.UseMiddleware<TokenAuthenticationMiddleware>();
             //使用MVC的controllers和action的映对
             app.MapControllers();
 

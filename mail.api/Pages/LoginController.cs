@@ -1,25 +1,24 @@
 ﻿using mail.api.Model.Request;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Security.Claims;
-using System.Security.Principal;
 using System.Text.Json;
 
 namespace mail.api.Pages
 {
+#if DEBUG
+    [Route("mail/api/[controller]/[action]")]
+#endif
     [Route("api/[controller]/[action]")]
     [ApiController]
     [Produces("application/json")]
-    [AllowAnonymous]
+    [Authorize(AuthenticationSchemes = "Basic")]
     public class LoginController : BaseController
     {
         /// <summary>
         /// 登入验证，并获取账号token标识
         /// </summary>
-        /// <param name="post" example="admin">提交参数格式参考样例</param>
+        /// <param name="post">提交参数格式参考样例</param>
         /// <remarks>验证通过返回token和status=ok，否则返回status为error</remarks>
         /// <response code="200">
         /// {
@@ -35,7 +34,8 @@ namespace mail.api.Pages
         ///     "currentAuthority":"guest"
         /// }</response>
         [HttpPost]
-        public async Task<IActionResult> Account([FromBody]Account post)//string username, string password
+        [AllowAnonymous]
+        public async Task<IActionResult> Account([FromBody]Account post)
         {
             var loginObj = new JObject();
 
@@ -55,14 +55,14 @@ namespace mail.api.Pages
 
                 await Db.SaveChangesAsync();
 
-                //验证通过
-                var claims = new List<Claim>
-                    {
-                        new Claim(ClaimTypes.Name, result.First().Id!),
-                    };
-                var identity = new ClaimsIdentity(claims, "Token");
-                var principal = new GenericPrincipal(identity, null);
-                SignIn(principal);
+                ////验证通过
+                //var claims = new List<Claim>
+                //    {
+                //        new Claim(ClaimTypes.Name, result.First().Id!),
+                //    };
+                //var identity = new ClaimsIdentity(claims, "Token");
+                //var principal = new GenericPrincipal(identity, null);
+                //SignIn(principal);
             }
             else 
             {
@@ -71,7 +71,7 @@ namespace mail.api.Pages
                 loginObj["currentAuthority"] = "guest";
             }
 
-            return Ok(loginObj.ToString(Formatting.None));
+            return Ok(loginObj);
         }
 
         /// <summary>
@@ -111,7 +111,7 @@ namespace mail.api.Pages
             //        userObj["userid"] = userItem.Id;
             //        userObj["access"] = userItem.Id;
             //        respObj["data"] = userObj;
-            //        return Ok(respObj.ToString(Formatting.None));
+            //        return Ok(respObj);
             //    }
             //}
 
@@ -122,12 +122,12 @@ namespace mail.api.Pages
                 userObj["userid"] = User.Identity.Name;
                 userObj["access"] = User.Identity.Name;
                 respObj["data"] = userObj;
-                return Ok(respObj.ToString(Formatting.None));
+                return Ok(respObj);
             }
 
             respObj["data"] = new JObject();
             respObj["data"]!["isLogin"] = false;
-            return Unauthorized(respObj.ToString(Formatting.None));
+            return Unauthorized(respObj);
         }
 
         [HttpPost]
@@ -160,7 +160,7 @@ namespace mail.api.Pages
                 }
             }
 
-            return Ok(respObj.ToString(Formatting.None));
+            return Ok(respObj);
         }
 
         [HttpPost]

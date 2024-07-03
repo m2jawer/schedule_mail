@@ -105,14 +105,14 @@ const Login: React.FC = () => {
           defaultMessage: '登录成功！',
         });
         message.success(defaultLoginSuccessMessage);
-
         localStorage.setItem('token', msg.token);
         await fetchUserInfo();
         const urlParams = new URL(window.location.href).searchParams;
-        history.push(urlParams.get('redirect') || '/');
+        //history.push(urlParams.get('redirect') || '/');
+        window.location.href = urlParams.get('redirect') || '/';
         return;
       }
-      console.log(msg);
+      //console.log(msg);
       // 如果失败去设置用户错误信息
       setUserLoginState(msg);
     } catch (error) {

@@ -1,6 +1,6 @@
 ﻿using mail.api.Common;
 using mail.api.Model;
-using Microsoft.AspNetCore.Connections.Features;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -10,8 +10,13 @@ using System.Text.Json;
 
 namespace mail.api.Pages
 {
+#if DEBUG
+    [Route("mail/api/[controller]/[action]")]
+#endif
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [Produces("application/json")]
+    [Authorize(AuthenticationSchemes = "Basic")]
     public class MailController : BaseController
     {
         [HttpGet]
@@ -19,24 +24,24 @@ namespace mail.api.Pages
         {
             if (Db.SysSettings.Count() == 0)
             {
-                return Ok("{}");
+                return Ok(new { });
             }
             else
             {
                 var setItem = Db.SysSettings.First();
 
-                return Ok(JsonConvert.SerializeObject(setItem));
+                return Ok(setItem);
             }
         }
 
         [HttpPost]
-        public async Task<IActionResult> UpdateSettings(JsonElement input)
+        public async Task<IActionResult> UpdateSettings(string mail, string mail_pwd, string mail_pop3, string mail_port)//JsonElement input
         {
             var setting = new SysSettings();
-            setting.Mail = GetJsonValue(input, "mail", "");
-            setting.MailPwd = GetJsonValue(input, "mail_pwd", "");
-            setting.MailPop3 = GetJsonValue(input, "mail_pop3", "");
-            setting.MailPort = GetJsonValue(input, "mail_port", 0);
+            setting.Mail = mail;// GetJsonValue(input, "mail", "");
+            setting.MailPwd = mail_pwd;//GetJsonValue(input, "mail_pwd", "");
+            setting.MailPop3 = mail_pop3;//GetJsonValue(input, "mail_pop3", "");
+            setting.MailPort = string.IsNullOrEmpty(mail_port) ? 0 : Convert.ToInt32(mail_port);//GetJsonValue(input, "mail_port", 0);
 
             var result = Db.SysSettings.First();
 
@@ -56,7 +61,7 @@ namespace mail.api.Pages
 
             var respObj = new JObject();
             respObj["success"] = true;
-            return Ok(respObj.ToString(Formatting.None));
+            return Ok(respObj);
         }
 
         [HttpPost]
@@ -67,7 +72,7 @@ namespace mail.api.Pages
             if (file == null)
             {
                 respObj["msg"] = "没有上传文件信息!";
-                return Ok(respObj.ToString(Formatting.None));
+                return Ok(respObj);
             }
 
             string saveFile = await Utility.SaveUploadFile(file.OpenReadStream(), file.FileName);
@@ -153,13 +158,13 @@ namespace mail.api.Pages
 
                 respObj["success"] = true;
 
-                return Ok(respObj.ToString(Formatting.None));
+                return Ok(respObj);
             }
             else
             {
                 respObj["msg"] = "文件内容是空的!";
 
-                return Ok(respObj.ToString(Formatting.None));
+                return Ok(respObj);
             }
         }
 
@@ -188,7 +193,7 @@ namespace mail.api.Pages
                 respObj["msg"] = "编辑资料不存在!";
             }
 
-            return Ok(respObj.ToString(Formatting.None));
+            return Ok(respObj);
         }
 
         [HttpPost]
@@ -257,7 +262,7 @@ namespace mail.api.Pages
                 }
             }
 
-            return Ok(respObj.ToString(Formatting.None));
+            return Ok(respObj);
         }
 
         [HttpPost]
@@ -278,30 +283,33 @@ namespace mail.api.Pages
                 respObj["msg"] = "没有符合资料的计划邮件!";
             }
 
-            return Ok(respObj.ToString(Formatting.None));
+            return Ok(respObj);
         }
 
         [HttpPost]
-        public async Task<IActionResult> GetTaskList(JsonElement input)
+        public async Task<IActionResult> GetTaskList(string? page, string? pagesize, string? batch_id)
         {
             var respObj = new JObject();
             respObj["success"] = true;
             try
             {
-                int pageIndex = GetJsonValue(input, "page", 1);
-                int pageSize = GetJsonValue(input, "pageSize", 10);
+                //int pageIndex = GetJsonValue(input, "page", 1);
+                //int pageSize = GetJsonValue(input, "pageSize", 10);
 
-                string batchId = GetJsonValue(input, "batch_id", "");
+                //string batchId = GetJsonValue(input, "batch_id", "");
+                string batchId = string.IsNullOrEmpty(batch_id) ? "" : batch_id;
+                int pageIndex = string.IsNullOrEmpty(page) ? 1 : Convert.ToInt32(page);
+                int pageSize = string.IsNullOrEmpty(pagesize) ? 10 : Convert.ToInt32(pagesize);
 
                 if (!string.IsNullOrEmpty(batchId))
                 {
                     var count = Db.ScheduleTask.Where(x => (x.Name.Contains(batchId))).Count();
                     var tasks = Db.ScheduleTask.Where(x => (x.Name.Contains(batchId))).Skip((pageIndex - 1) * pageSize).Take(pageSize).Select(
                         x => new {
-                            Name = x.Name,
-                            TaskCount = x.TaskCount,
-                            UpdateAt = x.UpdateAt,
-                            CreateAt = x.CreateAt,
+                            x.Name,
+                            x.TaskCount,
+                            x.UpdateAt,
+                            x.CreateAt,
                             SendCount = Db.ScheduleMail.Where(y => y.BatchId == x.Name && y.IsSend).Count(),
                             UnSendCount = x.TaskCount - x.SendCount,
                             IsFinish = x.UnSendCount == 0,
@@ -335,7 +343,7 @@ namespace mail.api.Pages
                 respObj["error"] = ex.Message + ex.StackTrace;
             }
 
-            return Ok(respObj.ToString(Formatting.None));
+            return Ok(respObj);
         }
 
         [HttpPost]
@@ -362,7 +370,7 @@ namespace mail.api.Pages
                 respObj["error"] = ex.Message + ex.StackTrace;
             }
 
-            return Ok(respObj.ToString(Formatting.None));
+            return Ok(respObj);
         }
 
         [HttpPost]
@@ -422,7 +430,7 @@ namespace mail.api.Pages
                 respObj["error"] = ex.Message + ex.StackTrace;
             }
 
-            return Ok(respObj.ToString(Formatting.None));
+            return Ok(respObj);
         }
     }
 }

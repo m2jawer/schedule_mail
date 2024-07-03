@@ -16,6 +16,11 @@ namespace mail.api.Common
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
+            if (!Request.Path.Value!.Contains("/api/", StringComparison.InvariantCultureIgnoreCase))
+            {
+                return Task.FromResult(AuthenticateResult.NoResult());
+            }
+
             string? token = Request.Headers["X-Authorization"];
 
             if (!string.IsNullOrEmpty(token))
@@ -30,14 +35,16 @@ namespace mail.api.Common
                         new Claim(ClaimTypes.Name, result.First().Id!),
                     };
                     var identity = new ClaimsIdentity(claims, Scheme.Name);
-                    var principal = new GenericPrincipal(identity, null);
+                    var principal = new GenericPrincipal(identity, [Scheme.Name]);
                     AuthenticationTicket ticket = new AuthenticationTicket(principal, Scheme.Name);
                     return Task.FromResult(AuthenticateResult.Success(ticket));
                 }
             }
 
             Response.StatusCode = StatusCodes.Status403Forbidden;
-            return Task.FromResult(AuthenticateResult.Fail("错误的Token信息！"));
+            
+            return Task.FromResult(AuthenticateResult.NoResult());
+            //return Task.FromResult(AuthenticateResult.Fail("错误的Token信息！"));
         }
     }
 
