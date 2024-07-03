@@ -1,22 +1,45 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using mail.api.Model.Request;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Security.Claims;
+using System.Security.Principal;
 using System.Text.Json;
 
 namespace mail.api.Pages
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [Produces("application/json")]
+    [AllowAnonymous]
     public class LoginController : BaseController
     {
+        /// <summary>
+        /// 登入验证，并获取账号token标识
+        /// </summary>
+        /// <param name="post" example="admin">提交参数格式参考样例</param>
+        /// <remarks>验证通过返回token和status=ok，否则返回status为error</remarks>
+        /// <response code="200">
+        /// {
+        ///     "status":"ok",
+        ///     "type":"account",
+        ///     "currentAuthority":"admin",
+        ///     "token":"xxxx-xxxx-xxxx-xxxx"
+        /// }</response>t
+        /// <response code="other">
+        /// {
+        ///     "status":"error",
+        ///     "type":"account",
+        ///     "currentAuthority":"guest"
+        /// }</response>
         [HttpPost]
-        public async Task<IActionResult> Account(JsonElement post)
+        public async Task<IActionResult> Account([FromBody]Account post)//string username, string password
         {
             var loginObj = new JObject();
-            string account = GetJsonValue(post, "username", "");
-            string password = GetJsonValue(post, "password", "");
 
-            var result = Db.Users.Where(x => x.Id == account && x.Pwd == password);
+            var result = Db.Users.Where(x => x.Id == post.username && x.Pwd == post.password);
 
             if (result.Count() > 0)
             {
@@ -31,6 +54,15 @@ namespace mail.api.Pages
                 result.First().Token = token;
 
                 await Db.SaveChangesAsync();
+
+                //验证通过
+                var claims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.Name, result.First().Id!),
+                    };
+                var identity = new ClaimsIdentity(claims, "Token");
+                var principal = new GenericPrincipal(identity, null);
+                SignIn(principal);
             }
             else 
             {
@@ -39,31 +71,58 @@ namespace mail.api.Pages
                 loginObj["currentAuthority"] = "guest";
             }
 
-            return Ok(loginObj.ToString(Newtonsoft.Json.Formatting.None));
+            return Ok(loginObj.ToString(Formatting.None));
         }
 
+        /// <summary>
+        /// 登入后获取当前账号信息
+        /// </summary>
+        /// <remarks>需要传入Header键值为Authorization进行登入验证识别</remarks>
+        /// <response code="200">
+        /// {
+        ///     "status":"ok",
+        ///     "type":"account",
+        ///     "currentAuthority":"admin",
+        ///     "token":"xxxx-xxxx-xxxx-xxxx"
+        /// }</response>
+        /// <response code="other">
+        /// {
+        ///     "status":"error",
+        ///     "type":"account",
+        ///     "currentAuthority":"guest"
+        /// }</response>
         [HttpGet]
         public IActionResult CurrentUser()
         {
-            string? token = Request.Headers["Authorization"];
+            //string? token = Request.Headers["X-Authorization"];
 
             var respObj = new JObject();
             respObj["success"] = true;
 
-            if (!string.IsNullOrEmpty(token))
-            {
-                var result = Db.Users.Where(x => x.Token == token);
+            //if (!string.IsNullOrEmpty(token))
+            //{
+            //    var result = Db.Users.Where(x => x.Token == token);
 
-                if (result.Count() > 0)
-                {
-                    var userItem = result.First();
-                    var userObj = new JObject();
-                    userObj["name"] = userItem.Id;
-                    userObj["userid"] = userItem.Id;
-                    userObj["access"] = userItem.Id;
-                    respObj["data"] = userObj;
-                    return Ok(respObj.ToString(Formatting.None));
-                }
+            //    if (result.Count() > 0)
+            //    {
+            //        var userItem = result.First();
+            //        var userObj = new JObject();
+            //        userObj["name"] = userItem.Id;
+            //        userObj["userid"] = userItem.Id;
+            //        userObj["access"] = userItem.Id;
+            //        respObj["data"] = userObj;
+            //        return Ok(respObj.ToString(Formatting.None));
+            //    }
+            //}
+
+            if (User.Identity != null && User.Identity.IsAuthenticated)
+            {
+                var userObj = new JObject();
+                userObj["name"] = User.Identity.Name;
+                userObj["userid"] = User.Identity.Name;
+                userObj["access"] = User.Identity.Name;
+                respObj["data"] = userObj;
+                return Ok(respObj.ToString(Formatting.None));
             }
 
             respObj["data"] = new JObject();
@@ -74,17 +133,31 @@ namespace mail.api.Pages
         [HttpPost]
         public IActionResult OutLogin()
         {
-            string? token = Request.Headers["Authorization"];
+            //string? token = Request.Headers["X-Authorization"];
+
+            //var respObj = new JObject();
+            //respObj["success"] = true;
+
+            //var result =  Db.Users.Where(x => x.Token == token);
+            //if (result.Count() > 0)
+            //{
+            //    result.First().Token = string.Empty;
+
+            //    var _ = Db.SaveChangesAsync();
+            //}
 
             var respObj = new JObject();
             respObj["success"] = true;
 
-            var result =  Db.Users.Where(x => x.Token == token);
-            if (result.Count() > 0)
+            if (User.Identity != null && User.Identity.IsAuthenticated)
             {
-                result.First().Token = string.Empty;
+                var result = Db.Users.Where(x => x.Id == User.Identity.Name);
+                if (result.Count() > 0)
+                {
+                    result.First().Token = string.Empty;
 
-                var _ = Db.SaveChangesAsync();
+                    var _ = Db.SaveChangesAsync();
+                }
             }
 
             return Ok(respObj.ToString(Formatting.None));

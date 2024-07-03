@@ -1,5 +1,6 @@
 ﻿using mail.api.DAL;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using System.Text.Json;
 
 namespace mail.api.Pages
@@ -34,6 +35,11 @@ namespace mail.api.Pages
             {
                 return defaultValue;
             }
+        }
+
+        public override SignInResult SignIn(ClaimsPrincipal principal)
+        {
+            return base.SignIn(principal);
         }
     }
 }
