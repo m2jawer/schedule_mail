@@ -1,5 +1,5 @@
 import { mail_schedule_task_list, mail_schedule_task_delete } from '@/services/ant-design-pro/api';
-import { MinusOutlined,PlusOutlined } from '@ant-design/icons';
+import { EditFilled,FileExcelFilled,MinusOutlined,PlusOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import {
   ModalForm,
@@ -95,7 +95,39 @@ const TaskList: React.FC = () => {
         actionRef={actionRef}
         rowKey="Name"
         toolBarRender={() => [
-          <Upload action={'/mail/api/mail/uploadschedule'} accept='.csv,.xls,.xlsx' fileList={uploadList} maxCount={1} onChange={handleUpload} showUploadList={false}>
+          <Button
+            type="primary"
+            key="primary"
+            onClick={async () => {
+              var aLink = document.createElement("a");
+              aLink.style.display = "none";
+              aLink.href = '/mail/api/template.xlsx';
+              aLink.target = '_blank';
+              aLink.setAttribute("id", 'template_download');
+              document.body.appendChild(aLink);
+              aLink.click();
+              document.body.removeChild(aLink); //下载完成移除元素
+            }}
+          >
+            <FileExcelFilled /> 模板下载
+          </Button>,
+          <Button
+          type="primary"
+          key="primary"
+          onClick={async () => {
+            var aLink = document.createElement("a");
+            aLink.style.display = "none";
+            aLink.href = 'https://tools.transnull.cn/editor/';
+            aLink.target = 'html_editor';
+            aLink.setAttribute("id", 'online_editor');
+            document.body.appendChild(aLink);
+            aLink.click();
+            document.body.removeChild(aLink); //下载完成移除元素
+          }}
+        >
+          <EditFilled /> HTML编辑器
+        </Button>,
+          <Upload action={'/mail/api/mail/uploadschedule'} headers={{"X-Authorization": localStorage.getItem('token') || null}} accept='.csv,.xls,.xlsx' fileList={uploadList} maxCount={1} onChange={handleUpload} showUploadList={false}>
             <Button
               type="primary"
               key="primary"
@@ -142,7 +174,7 @@ const TaskList: React.FC = () => {
             removeList.push(selectedRowsState[i].Name);
           }
           var post_data = {
-            batch_ids: JSON.stringify(removeList)
+            batch_ids: removeList
           };
           var respObj = await mail_schedule_task_delete(post_data);
 

@@ -26,6 +26,10 @@ const TaskDetail: React.FC = () => {
 
   const columns: ProColumns<API.ScheduleTaskDetail>[] = [
     {
+      title: '#',
+      dataIndex: 'Index'
+    },
+    {
       title: '目标邮件',
       dataIndex: 'Mail',
       tip: '计划时间到后向目标邮件发送邮件信息',
@@ -54,6 +58,16 @@ const TaskDetail: React.FC = () => {
       valueType: 'text',
     },
     {
+      title: '称呼',
+      dataIndex: 'Call',
+      valueType: 'text',
+    },
+    {
+      title: '生日',
+      dataIndex: 'Birthday',
+      valueType: 'text',
+    },
+    {
       title: '计划类型',
       dataIndex: 'MailType',
       tip: '公告,特殊时间,如生日,法定假期',
@@ -62,7 +76,7 @@ const TaskDetail: React.FC = () => {
         text: '公告'
        },
        2: {
-        text: '特殊时间'
+        text: '法定节假日'
        }
       }
     },
@@ -80,7 +94,16 @@ const TaskDetail: React.FC = () => {
     {
       title: '发送时间',
       dataIndex: 'LastSend',
-      valueType: 'dateTime',
+      valueType: 'text',
+      renderText: (dom, entity) => {
+        if(entity.LastSend == null || entity.LastSend.toString() == '0001-01-01T00:00:00') {
+          return "-";
+        }
+        else {
+          var sentTime = new Date(entity.LastSend);
+          return sentTime.toLocaleDateString() + ' ' + sentTime.toLocaleTimeString();
+        }
+      },
     }
   ];
   return (
@@ -111,7 +134,8 @@ const TaskDetail: React.FC = () => {
                 body: JSON.stringify(params),
                 method: 'POST',
                 headers: {
-                  'Content-Type': 'application/json;charset=UTF-8'
+                  'Content-Type': 'application/json-patch+json',
+                  "X-Authorization": localStorage.getItem('token')
                 }
               }
               const response = await fetch('/api/mail/downloadschedulemaillist', request)
@@ -158,7 +182,7 @@ const TaskDetail: React.FC = () => {
             removeList.push(taskName + '-' + selectedRowsState[i].Index);
           }
           var post_data = {
-            batch_ids: JSON.stringify(removeList)
+            batch_ids: removeList
           };
           var respObj = await mail_schedule_task_detail_delete(post_data);
 

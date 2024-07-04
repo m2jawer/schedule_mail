@@ -8,7 +8,7 @@ export async function addHeaderToken(options?: { [key: string]: any }) {
     options = {};
   }
   if(options.data == null) {
-    options.data = {};
+    options.data = {...(options || {})};
   }
   var token = localStorage.getItem('token');
   if(token != null) {
@@ -50,10 +50,9 @@ export async function edit_pwd(options?: { [key: string]: any }) {
 }
 
 export async function mail_login(options?: { [key: string]: any }) {
-  options = await addHeaderToken(options);
   return request<Record<string, any>>('/mail/api/login/account', {
     method: 'POST',
-    ...(options || {}),
+    data: {...(options || {})},
   });
 }
 
@@ -92,11 +91,14 @@ export async function mail_schedule_task_delete(options?: { [key: string]: any }
 
 export async function mail_schedule_task_detail(options?: { [key: string]: any }) {
   var taskName = parse(window.location.href.split('?')[1]).id;
-  options = await addHeaderToken(options);
+  if(options == null) {
+    options = {};
+  }
   options['batch_id'] = taskName;
+  options = await addHeaderToken(options);
   return request<Record<string, any>>('/mail/api/mail/gettaskdetails', {
     method: 'POST',
-      ...(options || {})
+    ...(options || {})
   });
 }
 

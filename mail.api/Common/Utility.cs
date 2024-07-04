@@ -9,7 +9,7 @@ namespace mail.api.Common
 {
     public static class Utility
     {
-        private static readonly string[] CONST_HEADER = ["批次", "索引", "邮箱", "发送时间", "昵称", "类别", "标题", "内容"];
+        private static readonly string[] CONST_HEADER = ["索引", "邮箱", "发送时间", "昵称", "称呼", "生日(月份/日期 发送时间)", "类别", "标题", "内容"];
 
         public static async Task<bool> SendMail(string user, string password, string smtp, string port, string mailTo, string subject, string mailContent)
         {
@@ -28,7 +28,7 @@ namespace mail.api.Common
             }
             catch (Exception ex)
             {
-                ex.ToString();
+                Console.WriteLine(ex.ToString());
                 return false;
             }
 
@@ -115,14 +115,15 @@ namespace mail.api.Common
 
                 for (int i = 2; i <= mails.Length + 1; i++)
                 {
-                    sheet.Cell(i, 1).Value = mails[i - 2].BatchId;
-                    sheet.Cell(i, 2).Value = mails[i - 2].Index;
-                    sheet.Cell(i, 3).Value = mails[i - 2].Mail;
-                    sheet.Cell(i, 4).Value = mails[i - 2].ScheduleTime;
-                    sheet.Cell(i, 5).Value = mails[i - 2].NickName;
-                    sheet.Cell(i, 6).Value = mails[i - 2].MailType == 1 ? "公告" : "生日";
-                    sheet.Cell(i, 7).Value = mails[i - 2].Subject;
-                    sheet.Cell(i, 8).Value = mails[i - 2].MailBody;
+                    sheet.Cell(i, 1).Value = mails[i - 2].Index;
+                    sheet.Cell(i, 2).Value = mails[i - 2].Mail;
+                    sheet.Cell(i, 3).Value = mails[i - 2].ScheduleTime;
+                    sheet.Cell(i, 4).Value = mails[i - 2].NickName;
+                    sheet.Cell(i, 5).Value = mails[i - 2].Call;
+                    sheet.Cell(i, 6).Value = mails[i - 2].Birthday;
+                    sheet.Cell(i, 7).Value = mails[i - 2].MailType == 1 ? "公告" : "生日";
+                    sheet.Cell(i, 8).Value = mails[i - 2].Subject;
+                    sheet.Cell(i, 9).Value = mails[i - 2].MailBody;
                 }
                 workbook.SaveAs(dlFile);
             }
@@ -172,17 +173,33 @@ namespace mail.api.Common
                 {
                     await Parallel.ForEachAsync(targetMails.ToArray(), parallelOptions, async (item, value) =>
                     {
-                        if (await SendMail(lastSet!.Mail!, lastSet.MailPwd!, lastSet.MailPop3!, lastSet.MailPort.ToString(), item.Mail!, item.Subject!, item.MailBody!))
+                        if (await SendMail(lastSet!.Mail!, lastSet.MailPwd!, lastSet.MailPop3!, lastSet.MailPort.ToString(), item.Mail!, item.GetMailSubject(), item.GetMailContent()))
                         {
                             item.IsSend = true;
                             item.LastSend = DateTime.Now;
+
+                            //如果是生日邮件，发送成功后下一次发送时间为自动加1年
+                            if (item.MailType == 2)//生日邮件
+                            {
+                                //重新设置计划发送时间，生日邮件计划自动每年发送一次
+                                item.ScheduleTime = item.GetBirthdayScheduleTime();
+                                item.IsSend = false;
+                            }
                         }
                     });
 
                     await db.SaveChangesAsync();
                 }
+
+                int loop2 = 0;
                 //一分钟轮训一次邮件
-                Thread.Sleep(60000);
+                while (loop2 < 60)
+                {
+                    Thread.Sleep(1000);
+                    loop2++;
+                }
+               
+                //Thread.Sleep(60000);
 
                 loop++;
 

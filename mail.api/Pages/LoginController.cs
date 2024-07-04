@@ -26,13 +26,15 @@ namespace mail.api.Pages
         ///     "type":"account",
         ///     "currentAuthority":"admin",
         ///     "token":"xxxx-xxxx-xxxx-xxxx"
-        /// }</response>t
+        /// }
+        /// </response>t
         /// <response code="other">
         /// {
         ///     "status":"error",
         ///     "type":"account",
         ///     "currentAuthority":"guest"
-        /// }</response>
+        /// }
+        /// </response>
         [HttpPost]
         [AllowAnonymous]
         public async Task<IActionResult> Account([FromBody]Account post)
@@ -77,20 +79,26 @@ namespace mail.api.Pages
         /// <summary>
         /// 登入后获取当前账号信息
         /// </summary>
-        /// <remarks>需要传入Header键值为Authorization进行登入验证识别</remarks>
+        /// <remarks>登入后才允许访问，需要传入Header键值为Authorization进行登入验证识别</remarks>
         /// <response code="200">
         /// {
-        ///     "status":"ok",
-        ///     "type":"account",
-        ///     "currentAuthority":"admin",
-        ///     "token":"xxxx-xxxx-xxxx-xxxx"
-        /// }</response>
+        ///     "success": true,
+        ///     "data"; {
+        ///         "status":"ok",
+        ///         "type":"account",
+        ///         "currentAuthority":"admin",
+        ///         "token":"xxxx-xxxx-xxxx-xxxx"
+        ///     }
+        /// }
+        /// </response>
         /// <response code="other">
         /// {
-        ///     "status":"error",
-        ///     "type":"account",
-        ///     "currentAuthority":"guest"
-        /// }</response>
+        ///     "success": false,
+        ///     "data"; {
+        ///         "isLogin":"false"
+        ///     }
+        /// }
+        /// </response>
         [HttpGet]
         public IActionResult CurrentUser()
         {
@@ -130,6 +138,20 @@ namespace mail.api.Pages
             return Unauthorized(respObj);
         }
 
+        /// <summary>
+        /// 登出注销登入凭证
+        /// </summary>
+        /// <remarks>登入后访问才有效</remarks>
+        /// <response code="200">
+        /// {
+        ///     "success":"true"
+        /// }
+        /// </response>
+        /// <response code="other">
+        /// {
+        ///     "success":"true"
+        /// }
+        /// </response>
         [HttpPost]
         public IActionResult OutLogin()
         {
@@ -163,13 +185,33 @@ namespace mail.api.Pages
             return Ok(respObj);
         }
 
+        /// <summary>
+        /// 更改用户密码
+        /// </summary>
+        /// <param name="post">修改密码需要原密码，新密码和确认密码等基本信息</param>
+        /// <remarks>登入后访问才有效</remarks>
+        /// <response code="200">
+        /// {
+        ///     "success":"true"
+        /// }
+        /// </response>
+        /// <response code="other">
+        /// {
+        ///     "success":"true"
+        /// }
+        /// </response>
         [HttpPost]
-        public IActionResult EditPwd(JsonElement post)
+        public IActionResult EditPwd([FromBody]PwdEdit post)
         {
-            string account = GetJsonValue(post, "username", "");
-            string pwd_old = GetJsonValue(post, "pwd_old", "");
-            string pwd = GetJsonValue(post, "pwd", "");
-            string pwd_confirm = GetJsonValue(post, "pwd2", "");
+            //string account = GetJsonValue(post, "username", "");
+            //string pwd_old = GetJsonValue(post, "pwd_old", "");
+            //string pwd = GetJsonValue(post, "pwd", "");
+            //string pwd_confirm = GetJsonValue(post, "pwd2", "");
+
+            string account = User.Identity!.Name!;
+            string pwd_old = post.pwd_old;
+            string pwd = post.pwd;
+            string pwd_confirm = post.pwd2;
 
             var result = Db.Users.Where(x => x.Id == account && x.Pwd == pwd_old);
             var editResp = new JObject();
@@ -195,7 +237,7 @@ namespace mail.api.Pages
                 }
             }
 
-            return Ok(editResp.ToString(Newtonsoft.Json.Formatting.None));
+            return Ok(editResp);
         }
     }
 }

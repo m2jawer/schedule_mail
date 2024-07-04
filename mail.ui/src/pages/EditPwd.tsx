@@ -1,9 +1,7 @@
-import { PageContainer,ProForm,ProFormCheckbox,ProFormText } from '@ant-design/pro-components';
+import { ProForm,ProFormText } from '@ant-design/pro-components';
 import { edit_pwd } from '@/services/ant-design-pro/api';
-import {
-  UserOutlined,
-} from '@ant-design/icons';
-import { FormattedMessage,useModel } from '@umijs/max';
+import { UserOutlined } from '@ant-design/icons';
+import { FormattedMessage, useModel } from '@umijs/max';
 import { message } from 'antd';
 import React from 'react';
 

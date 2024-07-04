@@ -99,7 +99,7 @@ namespace mail.api
                 Utility.StartTickingScheduleMail(db, cts.Token).Wait();
             });
 
-            //app.UseStaticFiles();
+            app.UseStaticFiles();
             //使用系统路由
 #if DEBUG
             app.UseRouting().UseAuthentication().UseAuthorization().UseEndpoints(endpoints =>
