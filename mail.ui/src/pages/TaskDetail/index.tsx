@@ -37,7 +37,7 @@ const TaskDetail: React.FC = () => {
         return (
           <a
             onClick={() => {
-              console.log(entity);
+              //console.log(entity);
               setCurrentRow(entity);
               setShowDetail(true);
             }}
@@ -73,10 +73,10 @@ const TaskDetail: React.FC = () => {
       tip: '公告,特殊时间,如生日,法定假期',
       valueEnum: {
        1: {
-        text: '公告'
+        text: '法定节假日'
        },
        2: {
-        text: '法定节假日'
+        text: '生日'
        }
       }
     },

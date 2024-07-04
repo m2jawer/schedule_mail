@@ -58,7 +58,6 @@ export async function mail_login(options?: { [key: string]: any }) {
 
 export async function mail_get_settings(options?: { [key: string]: any }) {
   options = await addHeaderToken(options);
-  console.log(options);
   return request<Record<string, any>>('/mail/api/mail/getsettings', {
     method: 'GET',
     ...(options || {}),

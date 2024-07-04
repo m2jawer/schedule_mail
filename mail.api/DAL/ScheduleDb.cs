@@ -1,4 +1,5 @@
-﻿using mail.api.Model;
+﻿using mail.api.Common;
+using mail.api.Model;
 using Microsoft.EntityFrameworkCore;
 
 namespace mail.api.DAL
@@ -13,7 +14,7 @@ namespace mail.api.DAL
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            var dbPath = AppDomain.CurrentDomain.BaseDirectory + "Data\\schedule.db";
+            var dbPath = AppDomain.CurrentDomain.BaseDirectory + "Data" + Utility.PathPerfix + "schedule.db";
             optionsBuilder.UseSqlite($"Data Source={dbPath}");
         }
 

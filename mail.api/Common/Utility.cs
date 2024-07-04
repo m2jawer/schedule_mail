@@ -4,12 +4,34 @@ using mail.api.Model;
 using System.Data;
 using System.Net;
 using System.Net.Mail;
+using System.Runtime.InteropServices;
 
 namespace mail.api.Common
 {
     public static class Utility
     {
         private static readonly string[] CONST_HEADER = ["索引", "邮箱", "发送时间", "昵称", "称呼", "生日(月份/日期 发送时间)", "类别", "标题", "内容"];
+        private static readonly string? pathPerfix;
+
+        static Utility()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                pathPerfix = "/";
+            }
+            else
+            {
+                pathPerfix = "\\";
+            }
+        }
+
+        public static string PathPerfix
+        {
+            get
+            {
+                return pathPerfix!;
+            }
+        }
 
         public static async Task<bool> SendMail(string user, string password, string smtp, string port, string mailTo, string subject, string mailContent)
         {
@@ -37,7 +59,7 @@ namespace mail.api.Common
 
         public static async Task<string> SaveUploadFile(Stream stream, string fileName)
         {
-            string directory = AppDomain.CurrentDomain.BaseDirectory + "Upload\\";
+            string directory = AppDomain.CurrentDomain.BaseDirectory + "Upload" + pathPerfix;
 
             if (!Directory.Exists(directory))
             {
@@ -95,7 +117,7 @@ namespace mail.api.Common
 
         public static Stream GeneralExcelStream(ScheduleMail[] mails)
         {
-            string directory = AppDomain.CurrentDomain.BaseDirectory + "Temp\\";
+            string directory = AppDomain.CurrentDomain.BaseDirectory + "Temp" + pathPerfix;
 
             if (!Directory.Exists(directory))
             {
@@ -191,15 +213,15 @@ namespace mail.api.Common
                     await db.SaveChangesAsync();
                 }
 
-                int loop2 = 0;
-                //一分钟轮训一次邮件
-                while (loop2 < 60)
-                {
-                    Thread.Sleep(1000);
-                    loop2++;
-                }
+                //int loop2 = 0;
+                ////一分钟轮训一次邮件
+                //while (loop2 < 60)
+                //{
+                //    Thread.Sleep(1000);
+                //    loop2++;
+                //}
                
-                //Thread.Sleep(60000);
+                Thread.Sleep(60000);
 
                 loop++;
 

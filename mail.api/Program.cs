@@ -112,7 +112,7 @@ namespace mail.api
                 c.RoutePrefix = string.Empty;
             });
 #else
-            app.UseRouting().UseAuthentication();.UseAuthorization();
+            app.UseRouting().UseAuthentication().UseAuthorization();
 #endif
             //app.UseMiddleware<TokenAuthenticationMiddleware>();
             //使用MVC的controllers和action的映对
